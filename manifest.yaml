@@ -1,2 +1,228 @@
-name: mcp-agent
-version: 0.1.0
+openapi: 3.0.0
+info:
+  title: MCP Agent API
+  version: 0.1.0
+  description: API for executing commands, file and GUI operations via MCP agent.
+servers:
+  - url: http://localhost:8000
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Simple healthcheck endpoint.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /browse:
+    post:
+      summary: Browse a webpage
+      description: Open a URL, optionally click an element, and return a screenshot.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrowseReq'
+      responses:
+        '200':
+          description: Result of browsing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  screenshot:
+                    type: string
+                    description: Base64 screenshot when ``screenshot`` is true
+                  error:
+                    type: string
+  /run_command:
+    post:
+      summary: Execute command
+      description: Execute a whitelisted shell command and return its output.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunCmd'
+      responses:
+        '200':
+          description: Command output or error message
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  output:
+                    type: string
+                  error:
+                    type: string
+  /read_file:
+    post:
+      summary: Read file
+      description: Return the contents of a permitted file.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReadReq'
+      responses:
+        '200':
+          description: Contents of the file
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: string
+  /write_file:
+    post:
+      summary: Write file
+      description: Write content to a permitted file.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WriteReq'
+      responses:
+        '200':
+          description: Status of the operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+  /click:
+    post:
+      summary: Click GUI
+      description: Click at the specified screen coordinates.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClickPayload'
+      responses:
+        '200':
+          description: Result of click operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  error:
+                    type: string
+  /type_text:
+    post:
+      summary: Type text
+      description: Type the given text at the current cursor location.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TypeTextPayload'
+      responses:
+        '200':
+          description: Result of typing operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  error:
+                    type: string
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+  schemas:
+    BrowseReq:
+      type: object
+      properties:
+        url:
+          type: string
+        click_selector:
+          type: string
+          nullable: true
+        screenshot:
+          type: boolean
+      required:
+        - url
+    RunCmd:
+      type: object
+      properties:
+        cmd:
+          type: array
+          items:
+            type: string
+      required:
+        - cmd
+    ReadReq:
+      type: object
+      properties:
+        path:
+          type: string
+      required:
+        - path
+    WriteReq:
+      type: object
+      properties:
+        path:
+          type: string
+        content:
+          type: string
+      required:
+        - path
+        - content
+    ClickPayload:
+      type: object
+      properties:
+        x:
+          type: integer
+        y:
+          type: integer
+      required:
+        - x
+        - y
+    TypeTextPayload:
+      type: object
+      properties:
+        text:
+          type: string
+      required:
+        - text
